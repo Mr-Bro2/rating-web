@@ -179,6 +179,8 @@ function bindEvents() {
       tab.classList.add('active');
       currentMajor = tab.dataset.major;
       renderPersons();
+      document.getElementById('editPersonSelect').addEventListener('change', fillEditForm);
+      document.getElementById('editPersonBtn').addEventListener('click', editPerson);
     });
   });
 

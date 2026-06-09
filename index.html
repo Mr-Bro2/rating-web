@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>匿名评分榜</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div>
+        <h1>匿名评分榜</h1>
+        <p>0-10 分匿名评分 · 按专业分类查看</p>
+      </div>
+      <button class="admin-btn" onclick="openAdmin()">管理</button>
+    </header>
+
+    <section class="search-card">
+      <input id="searchInput" type="text" placeholder="搜索人物名称 / 物名" oninput="render()" />
+    </section>
+
+    <section class="tabs">
+      <button class="tab active" data-major="全部" onclick="setMajor('全部')">全部</button>
+      <button class="tab" data-major="计算机" onclick="setMajor('计算机')">计算机</button>
+      <button class="tab" data-major="商科" onclick="setMajor('商科')">商科</button>
+    </section>
+
+    <main>
+      <div class="rank-title">
+        <h2 id="listTitle">热门评分榜</h2>
+        <span id="countText"></span>
+      </div>
+      <div id="personList" class="person-list"></div>
+    </main>
+  </div>
+
+  <div id="detailModal" class="modal hidden">
+    <div class="modal-mask" onclick="closeDetail()"></div>
+    <div class="modal-panel">
+      <button class="close" onclick="closeDetail()">×</button>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <div id="adminModal" class="modal hidden">
+    <div class="modal-mask" onclick="closeAdmin()"></div>
+    <div class="modal-panel">
+      <button class="close" onclick="closeAdmin()">×</button>
+      <h2>添加评分对象</h2>
+      <p class="tips">当前版本为本地存储 Demo，数据保存在用户手机浏览器内。正式上线可接入数据库。</p>
+      <label>名称</label>
+      <input id="newName" placeholder="例如：张三" />
+      <label>专业分类</label>
+      <select id="newMajor">
+        <option value="计算机">计算机</option>
+        <option value="商科">商科</option>
+      </select>
+      <label>简介 / 标签</label>
+      <input id="newDesc" placeholder="例如：活跃、学霸、搞笑" />
+      <button class="submit" onclick="addPerson()">添加</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

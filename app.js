@@ -315,3 +315,51 @@ async function deletePerson() {
   alert('删除成功');
   await loadPersons();
 }
+function renderEditOptions() {
+  const select = document.getElementById('editPersonSelect');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">选择要修改的人物</option>';
+
+  persons.forEach(person => {
+    const option = document.createElement('option');
+    option.value = person.id;
+    option.textContent = `${person.name}（${person.major || '未分类'}）`;
+    select.appendChild(option);
+  });
+}
+
+function fillEditForm() {
+  const id = document.getElementById('editPersonSelect').value;
+  const person = persons.find(p => p.id === id);
+
+  if (!person) {
+    document.getElementById('editName').value = '';
+    return;
+  }
+
+  document.getElementById('editName').value = person.name;
+  document.getElementById('editMajor').value = person.major || '计算机';
+}
+
+async function editPerson() {
+  const id = document.getElementById('editPersonSelect').value;
+  const name = document.getElementById('editName').value.trim();
+  const major = document.getElementById('editMajor').value;
+
+  if (!id) return alert('请先选择要修改的人物');
+  if (!name) return alert('请输入人物名称');
+
+  const { error } = await client
+    .from('persons')
+    .update({ name, major })
+    .eq('id', id);
+
+  if (error) {
+    alert('修改失败：' + error.message);
+    return;
+  }
+
+  alert('修改成功');
+  await loadPersons();
+}

@@ -1,4 +1,4 @@
-// 这里填你的 Supabase 信息
+// Supabase 配置
 const SUPABASE_URL = 'https://gykadjqiwnjzuznreryp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_WVBuYK6RgERTcQ4CruTEbw_Uh7H9eUl';
 
@@ -12,6 +12,7 @@ let currentUser = null;
 const rankingList = document.getElementById('rankingList');
 const searchInput = document.getElementById('searchInput');
 const tabs = document.querySelectorAll('.tab');
+
 const detailModal = document.getElementById('detailModal');
 const modalName = document.getElementById('modalName');
 const modalMajor = document.getElementById('modalMajor');
@@ -29,17 +30,20 @@ async function init() {
 
 async function ensureAnonymousUser() {
   const { data: sessionData } = await client.auth.getSession();
+
   if (sessionData.session?.user) {
     currentUser = sessionData.session.user;
     return;
   }
 
   const { data, error } = await client.auth.signInAnonymously();
+
   if (error) {
     alert('匿名登录失败，请检查 Supabase Anonymous 是否开启');
     console.error(error);
     return;
   }
+
   currentUser = data.user;
 }
 
@@ -57,17 +61,23 @@ async function loadPersons() {
   }
 
   persons = data || [];
-renderPersons();
-renderDeleteOptions();
-renderEditOptions();
+
+  renderPersons();
+  renderDeleteOptions();
+  renderEditOptions();
 }
 
 function renderPersons() {
   const keyword = searchInput.value.trim();
   let list = persons;
 
-  if (currentMajor !== 'all') list = list.filter(p => p.major === currentMajor);
-  if (keyword) list = list.filter(p => p.name.includes(keyword));
+  if (currentMajor !== 'all') {
+    list = list.filter(p => p.major === currentMajor);
+  }
+
+  if (keyword) {
+    list = list.filter(p => p.name.includes(keyword));
+  }
 
   if (!list.length) {
     rankingList.innerHTML = '<div class="card">暂无人物数据</div>';
@@ -80,6 +90,7 @@ function renderPersons() {
         <div class="person-name">${index + 1}. ${escapeHtml(p.name)}</div>
         <span class="major">${escapeHtml(p.major || '未分类')}</span>
       </div>
+
       <div>
         <div class="score">${Number(p.average_score || 0).toFixed(1)}</div>
         <div class="count">${p.score_count || 0}人评分</div>
@@ -90,20 +101,27 @@ function renderPersons() {
 
 function openDetail(id) {
   currentPerson = persons.find(p => p.id === id);
-  if (!currentPerson) return;
+
+  if (!currentPerson) {
+    return;
+  }
 
   modalName.textContent = currentPerson.name;
   modalMajor.textContent = currentPerson.major || '未分类';
   modalScore.textContent = Number(currentPerson.average_score || 0).toFixed(1);
   modalCount.textContent = `${currentPerson.score_count || 0} 人已评分`;
+
   scoreRange.value = 10;
   scoreValue.textContent = '10';
   ratingMsg.textContent = '';
+
   detailModal.classList.remove('hidden');
 }
 
 async function submitRating() {
-  if (!currentUser || !currentPerson) return;
+  if (!currentUser || !currentPerson) {
+    return;
+  }
 
   const newScore = Number(scoreRange.value);
 
@@ -128,7 +146,9 @@ async function submitRating() {
 
     const { error } = await client
       .from('ratings')
-      .update({ score: newScore })
+      .update({
+        score: newScore
+      })
       .eq('id', oldRating.id);
 
     if (error) {
@@ -141,7 +161,11 @@ async function submitRating() {
 
     const { error } = await client
       .from('ratings')
-      .insert({ person_id: currentPerson.id, user_id: currentUser.id, score: newScore });
+      .insert({
+        person_id: currentPerson.id,
+        user_id: currentUser.id,
+        score: newScore
+      });
 
     if (error) {
       ratingMsg.textContent = '提交评分失败：' + error.message;
@@ -166,27 +190,37 @@ async function submitRating() {
   }
 
   ratingMsg.textContent = oldRating ? '评分已修改成功' : '评分成功';
+
   await loadPersons();
+
   currentPerson = persons.find(p => p.id === currentPerson.id);
-  modalScore.textContent = Number(currentPerson.average_score || 0).toFixed(1);
-  modalCount.textContent = `${currentPerson.score_count || 0} 人已评分`;
+
+  if (currentPerson) {
+    modalScore.textContent = Number(currentPerson.average_score || 0).toFixed(1);
+    modalCount.textContent = `${currentPerson.score_count || 0} 人已评分`;
+  }
 }
 
 function bindEvents() {
   searchInput.addEventListener('input', renderPersons);
+
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       currentMajor = tab.dataset.major;
       renderPersons();
-      document.getElementById('editPersonSelect').addEventListener('change', fillEditForm);
-      document.getElementById('editPersonBtn').addEventListener('click', editPerson);
     });
   });
 
-  document.getElementById('closeModal').addEventListener('click', () => detailModal.classList.add('hidden'));
-  scoreRange.addEventListener('input', () => scoreValue.textContent = scoreRange.value);
+  document.getElementById('closeModal').addEventListener('click', () => {
+    detailModal.classList.add('hidden');
+  });
+
+  scoreRange.addEventListener('input', () => {
+    scoreValue.textContent = scoreRange.value;
+  });
+
   document.getElementById('submitScoreBtn').addEventListener('click', submitRating);
 
   document.getElementById('adminBtn').addEventListener('click', () => {
@@ -196,6 +230,8 @@ function bindEvents() {
   document.getElementById('loginBtn').addEventListener('click', adminLogin);
   document.getElementById('addPersonBtn').addEventListener('click', addPerson);
   document.getElementById('deletePersonBtn').addEventListener('click', deletePerson);
+  document.getElementById('editPersonSelect').addEventListener('change', fillEditForm);
+  document.getElementById('editPersonBtn').addEventListener('click', editPerson);
   document.getElementById('logoutBtn').addEventListener('click', adminLogout);
 }
 
@@ -203,7 +239,11 @@ async function adminLogin() {
   const email = document.getElementById('adminEmail').value.trim();
   const password = document.getElementById('adminPassword').value;
 
-  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  const { data, error } = await client.auth.signInWithPassword({
+    email,
+    password
+  });
+
   if (error) {
     alert('管理员登录失败：' + error.message);
     return;
@@ -220,9 +260,13 @@ async function adminLogin() {
     return;
   }
 
+  currentUser = data.user;
+
   document.getElementById('loginBox').classList.add('hidden');
   document.getElementById('manageBox').classList.remove('hidden');
   document.getElementById('adminStatus').textContent = `当前管理员：${data.user.email}`;
+
+  await loadPersons();
 }
 
 async function adminLogout() {
@@ -233,16 +277,22 @@ async function adminLogout() {
 async function addPerson() {
   const name = document.getElementById('newName').value.trim();
   const major = document.getElementById('newMajor').value;
-  if (!name) return alert('请输入人物名称');
 
-  const { error } = await client.from('persons').insert({
-    name,
-    major,
-    avatar: null,
-    score_total: 0,
-    score_count: 0,
-    average_score: 0
-  });
+  if (!name) {
+    alert('请输入人物名称');
+    return;
+  }
+
+  const { error } = await client
+    .from('persons')
+    .insert({
+      name,
+      major,
+      avatar: null,
+      score_total: 0,
+      score_count: 0,
+      average_score: 0
+    });
 
   if (error) {
     alert('添加失败：' + error.message);
@@ -250,21 +300,18 @@ async function addPerson() {
   }
 
   document.getElementById('newName').value = '';
+
   await loadPersons();
+
   alert('添加成功');
 }
 
-function escapeHtml(str) {
-  return String(str || '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
 function renderDeleteOptions() {
   const select = document.getElementById('deletePersonSelect');
-  if (!select) return;
+
+  if (!select) {
+    return;
+  }
 
   select.innerHTML = '<option value="">选择要删除的人物</option>';
 
@@ -311,11 +358,16 @@ async function deletePerson() {
   }
 
   alert('删除成功');
+
   await loadPersons();
 }
+
 function renderEditOptions() {
   const select = document.getElementById('editPersonSelect');
-  if (!select) return;
+
+  if (!select) {
+    return;
+  }
 
   select.innerHTML = '<option value="">选择要修改的人物</option>';
 
@@ -345,12 +397,22 @@ async function editPerson() {
   const name = document.getElementById('editName').value.trim();
   const major = document.getElementById('editMajor').value;
 
-  if (!id) return alert('请先选择要修改的人物');
-  if (!name) return alert('请输入人物名称');
+  if (!id) {
+    alert('请先选择要修改的人物');
+    return;
+  }
+
+  if (!name) {
+    alert('请输入人物名称');
+    return;
+  }
 
   const { error } = await client
     .from('persons')
-    .update({ name, major })
+    .update({
+      name,
+      major
+    })
     .eq('id', id);
 
   if (error) {
@@ -359,7 +421,20 @@ async function editPerson() {
   }
 
   alert('修改成功');
+
+  document.getElementById('editPersonSelect').value = '';
+  document.getElementById('editName').value = '';
+
   await loadPersons();
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 init();

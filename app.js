@@ -1,27 +1,261 @@
-const STORAGE_KEY='rating_app_persons_v1';
-const USER_KEY='rating_app_user_id_v1';
-let currentMajor='全部';
-let currentPersonId=null;
-let selectedScore=null;
+// 这里填你的 Supabase 信息
+const SUPABASE_URL = 'https://gykadjqiwnjzuznreryp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_WVBuYK6RgERTcQ4CruTEbw_Uh7H9eUl';
 
-function getUserId(){let id=localStorage.getItem(USER_KEY);if(!id){id='u_'+Date.now()+'_'+Math.random().toString(16).slice(2);localStorage.setItem(USER_KEY,id)}return id}
-function seed(){return[
-{id:1,name:'张三',major:'计算机',desc:'活跃 / 技术流',scoreTotal:87,scoreCount:10,ratings:{}},
-{id:2,name:'李四',major:'计算机',desc:'学霸 / 低调',scoreTotal:92,scoreCount:10,ratings:{}},
-{id:3,name:'王五',major:'商科',desc:'社交强 / 表达力好',scoreTotal:81,scoreCount:10,ratings:{}},
-{id:4,name:'赵六',major:'商科',desc:'认真 / 稳定发挥',scoreTotal:76,scoreCount:10,ratings:{}}
-]}
-function load(){const raw=localStorage.getItem(STORAGE_KEY);if(!raw){localStorage.setItem(STORAGE_KEY,JSON.stringify(seed()));return seed()}return JSON.parse(raw)}
-function save(data){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
-function avg(p){return p.scoreCount? (p.scoreTotal/p.scoreCount).toFixed(1):'暂无'}
-function setMajor(m){currentMajor=m;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.major===m));render()}
-function render(){const q=document.getElementById('searchInput').value.trim();let data=load();let list=data.filter(p=>(currentMajor==='全部'||p.major===currentMajor)&&(!q||p.name.includes(q)||p.desc.includes(q)));list.sort((a,b)=>(b.scoreCount?b.scoreTotal/b.scoreCount:0)-(a.scoreCount?a.scoreTotal/a.scoreCount:0));document.getElementById('listTitle').innerText=currentMajor==='全部'?'热门评分榜':currentMajor+'专业评分榜';document.getElementById('countText').innerText=list.length+' 个对象';const box=document.getElementById('personList');if(!list.length){box.innerHTML='<div class="empty">没有找到相关人物</div>';return}box.innerHTML=list.map((p,i)=>`<div class="person-card" onclick="openDetail(${p.id})"><div class="avatar">${p.name[0]}</div><div class="info"><h3>${i+1}. ${p.name}</h3><p>${p.major} · ${p.desc||'暂无简介'}</p><span class="badge">${p.scoreCount} 人评分</span></div><div class="score"><strong>${avg(p)}</strong><span>平均分</span></div></div>`).join('')}
-function openDetail(id){currentPersonId=id;selectedScore=null;const p=load().find(x=>x.id===id);const userScore=p.ratings[getUserId()];if(userScore!==undefined) selectedScore=userScore;document.getElementById('detailModal').classList.remove('hidden');renderDetail()}
-function renderDetail(){const p=load().find(x=>x.id===currentPersonId);const buttons=Array.from({length:11},(_,i)=>`<button class="${selectedScore===i?'selected':''}" onclick="selectScore(${i})">${i}</button>`).join('');document.getElementById('detailContent').innerHTML=`<div class="detail-top"><div class="big-avatar">${p.name[0]}</div><h2>${p.name}</h2><p>${p.major} · ${p.desc||'暂无简介'}</p><div class="big-score">${avg(p)}</div><p>${p.scoreCount} 人已评分</p></div><h3>请选择你的评分</h3><div class="score-grid">${buttons}</div><button class="submit" onclick="submitScore()">提交匿名评分</button><p class="disclaimer">提示：每个浏览器用户对同一人物只记录一次评分，再次提交会修改原评分，不会重复增加人数。</p>`}
-function selectScore(s){selectedScore=s;renderDetail()}
-function submitScore(){if(selectedScore===null){alert('请先选择评分');return}let data=load();const p=data.find(x=>x.id===currentPersonId);const uid=getUserId();if(p.ratings[uid]!==undefined){p.scoreTotal=p.scoreTotal-p.ratings[uid]+selectedScore}else{p.scoreTotal+=selectedScore;p.scoreCount+=1}p.ratings[uid]=selectedScore;save(data);alert('评分成功，已匿名记录');renderDetail();render()}
-function closeDetail(){document.getElementById('detailModal').classList.add('hidden')}
-function openAdmin(){document.getElementById('adminModal').classList.remove('hidden')}
-function closeAdmin(){document.getElementById('adminModal').classList.add('hidden')}
-function addPerson(){const name=document.getElementById('newName').value.trim();const major=document.getElementById('newMajor').value;const desc=document.getElementById('newDesc').value.trim();if(!name){alert('请输入名称');return}let data=load();data.push({id:Date.now(),name,major,desc,scoreTotal:0,scoreCount:0,ratings:{}});save(data);document.getElementById('newName').value='';document.getElementById('newDesc').value='';closeAdmin();render()}
-render();
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let persons = [];
+let currentMajor = 'all';
+let currentPerson = null;
+let currentUser = null;
+
+const rankingList = document.getElementById('rankingList');
+const searchInput = document.getElementById('searchInput');
+const tabs = document.querySelectorAll('.tab');
+const detailModal = document.getElementById('detailModal');
+const modalName = document.getElementById('modalName');
+const modalMajor = document.getElementById('modalMajor');
+const modalScore = document.getElementById('modalScore');
+const modalCount = document.getElementById('modalCount');
+const scoreRange = document.getElementById('scoreRange');
+const scoreValue = document.getElementById('scoreValue');
+const ratingMsg = document.getElementById('ratingMsg');
+
+async function init() {
+  await ensureAnonymousUser();
+  await loadPersons();
+  bindEvents();
+}
+
+async function ensureAnonymousUser() {
+  const { data: sessionData } = await client.auth.getSession();
+  if (sessionData.session?.user) {
+    currentUser = sessionData.session.user;
+    return;
+  }
+
+  const { data, error } = await client.auth.signInAnonymously();
+  if (error) {
+    alert('匿名登录失败，请检查 Supabase Anonymous 是否开启');
+    console.error(error);
+    return;
+  }
+  currentUser = data.user;
+}
+
+async function loadPersons() {
+  const { data, error } = await client
+    .from('persons')
+    .select('*')
+    .order('average_score', { ascending: false })
+    .order('score_count', { ascending: false });
+
+  if (error) {
+    rankingList.innerHTML = `<div class="card">读取数据失败：${error.message}</div>`;
+    console.error(error);
+    return;
+  }
+
+  persons = data || [];
+  renderPersons();
+}
+
+function renderPersons() {
+  const keyword = searchInput.value.trim();
+  let list = persons;
+
+  if (currentMajor !== 'all') list = list.filter(p => p.major === currentMajor);
+  if (keyword) list = list.filter(p => p.name.includes(keyword));
+
+  if (!list.length) {
+    rankingList.innerHTML = '<div class="card">暂无人物数据</div>';
+    return;
+  }
+
+  rankingList.innerHTML = list.map((p, index) => `
+    <div class="card" onclick="openDetail('${p.id}')">
+      <div>
+        <div class="person-name">${index + 1}. ${escapeHtml(p.name)}</div>
+        <span class="major">${escapeHtml(p.major || '未分类')}</span>
+      </div>
+      <div>
+        <div class="score">${Number(p.average_score || 0).toFixed(1)}</div>
+        <div class="count">${p.score_count || 0}人评分</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openDetail(id) {
+  currentPerson = persons.find(p => p.id === id);
+  if (!currentPerson) return;
+
+  modalName.textContent = currentPerson.name;
+  modalMajor.textContent = currentPerson.major || '未分类';
+  modalScore.textContent = Number(currentPerson.average_score || 0).toFixed(1);
+  modalCount.textContent = `${currentPerson.score_count || 0} 人已评分`;
+  scoreRange.value = 10;
+  scoreValue.textContent = '10';
+  ratingMsg.textContent = '';
+  detailModal.classList.remove('hidden');
+}
+
+async function submitRating() {
+  if (!currentUser || !currentPerson) return;
+
+  const newScore = Number(scoreRange.value);
+
+  const { data: oldRating, error: readError } = await client
+    .from('ratings')
+    .select('*')
+    .eq('person_id', currentPerson.id)
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+
+  if (readError) {
+    ratingMsg.textContent = '读取评分失败：' + readError.message;
+    return;
+  }
+
+  let scoreTotal = Number(currentPerson.score_total || 0);
+  let scoreCount = Number(currentPerson.score_count || 0);
+
+  if (oldRating) {
+    const oldScore = Number(oldRating.score || 0);
+    scoreTotal = scoreTotal - oldScore + newScore;
+
+    const { error } = await client
+      .from('ratings')
+      .update({ score: newScore })
+      .eq('id', oldRating.id);
+
+    if (error) {
+      ratingMsg.textContent = '修改评分失败：' + error.message;
+      return;
+    }
+  } else {
+    scoreTotal += newScore;
+    scoreCount += 1;
+
+    const { error } = await client
+      .from('ratings')
+      .insert({ person_id: currentPerson.id, user_id: currentUser.id, score: newScore });
+
+    if (error) {
+      ratingMsg.textContent = '提交评分失败：' + error.message;
+      return;
+    }
+  }
+
+  const averageScore = scoreCount > 0 ? scoreTotal / scoreCount : 0;
+
+  const { error: updateError } = await client
+    .from('persons')
+    .update({
+      score_total: scoreTotal,
+      score_count: scoreCount,
+      average_score: averageScore
+    })
+    .eq('id', currentPerson.id);
+
+  if (updateError) {
+    ratingMsg.textContent = '更新平均分失败：' + updateError.message;
+    return;
+  }
+
+  ratingMsg.textContent = oldRating ? '评分已修改成功' : '评分成功';
+  await loadPersons();
+  currentPerson = persons.find(p => p.id === currentPerson.id);
+  modalScore.textContent = Number(currentPerson.average_score || 0).toFixed(1);
+  modalCount.textContent = `${currentPerson.score_count || 0} 人已评分`;
+}
+
+function bindEvents() {
+  searchInput.addEventListener('input', renderPersons);
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentMajor = tab.dataset.major;
+      renderPersons();
+    });
+  });
+
+  document.getElementById('closeModal').addEventListener('click', () => detailModal.classList.add('hidden'));
+  scoreRange.addEventListener('input', () => scoreValue.textContent = scoreRange.value);
+  document.getElementById('submitScoreBtn').addEventListener('click', submitRating);
+
+  document.getElementById('adminBtn').addEventListener('click', () => {
+    document.getElementById('adminPanel').classList.toggle('hidden');
+  });
+
+  document.getElementById('loginBtn').addEventListener('click', adminLogin);
+  document.getElementById('addPersonBtn').addEventListener('click', addPerson);
+  document.getElementById('logoutBtn').addEventListener('click', adminLogout);
+}
+
+async function adminLogin() {
+  const email = document.getElementById('adminEmail').value.trim();
+  const password = document.getElementById('adminPassword').value;
+
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  if (error) {
+    alert('管理员登录失败：' + error.message);
+    return;
+  }
+
+  const { data: admin, error: adminError } = await client
+    .from('admins')
+    .select('*')
+    .eq('email', data.user.email)
+    .maybeSingle();
+
+  if (adminError || !admin) {
+    alert('该账号不是管理员');
+    return;
+  }
+
+  document.getElementById('loginBox').classList.add('hidden');
+  document.getElementById('manageBox').classList.remove('hidden');
+  document.getElementById('adminStatus').textContent = `当前管理员：${data.user.email}`;
+}
+
+async function adminLogout() {
+  await client.auth.signOut();
+  location.reload();
+}
+
+async function addPerson() {
+  const name = document.getElementById('newName').value.trim();
+  const major = document.getElementById('newMajor').value;
+  if (!name) return alert('请输入人物名称');
+
+  const { error } = await client.from('persons').insert({
+    name,
+    major,
+    avatar: null,
+    score_total: 0,
+    score_count: 0,
+    average_score: 0
+  });
+
+  if (error) {
+    alert('添加失败：' + error.message);
+    return;
+  }
+
+  document.getElementById('newName').value = '';
+  await loadPersons();
+  alert('添加成功');
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+init();

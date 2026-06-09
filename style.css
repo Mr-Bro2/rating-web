@@ -407,3 +407,26 @@ select {
     font-size: 12px;
   }
 }
+/* 桌面端强制标题按整个屏幕居中 */
+@media (min-width: 769px) {
+  .topbar {
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  .topbar > div,
+  .topbar-content {
+    grid-column: 2 !important;
+    justify-self: center !important;
+    text-align: center !important;
+  }
+
+  #adminBtn {
+    grid-column: 3 !important;
+    justify-self: end !important;
+    position: static !important;
+    transform: none !important;
+  }
+}

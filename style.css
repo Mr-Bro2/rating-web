@@ -1,10 +1,25 @@
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
+
+html,
 body {
   margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
   background: #f4f5f7;
   color: #1f2937;
 }
+
+/* =========================
+   顶部导航
+========================= */
+
 .topbar {
   background: linear-gradient(135deg, #111827, #374151);
   color: white;
@@ -13,26 +28,78 @@ body {
   justify-content: space-between;
   align-items: center;
 }
-.topbar h1 { margin: 0; font-size: 26px; }
-.topbar p { margin: 6px 0 0; opacity: .82; }
+
+.topbar h1 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.topbar p {
+  margin: 6px 0 0;
+  opacity: 0.85;
+}
+
+/* =========================
+   通用按钮
+========================= */
+
 button {
-  border: 0;
+  border: none;
   border-radius: 10px;
   padding: 10px 14px;
   background: #111827;
   color: white;
   font-weight: 700;
   cursor: pointer;
+  transition: 0.2s;
 }
-button:active { transform: scale(.98); }
-.container { max-width: 900px; margin: 0 auto; padding: 16px; }
-.search-card, .admin-panel, .card, .modal-content {
-  background: white;
+
+button:hover {
+  opacity: 0.92;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* =========================
+   主容器
+========================= */
+
+.container {
+  max-width: 900px;
+  min-height: calc(100vh - 110px);
+  margin: 0 auto;
+  padding: 16px;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================
+   卡片统一风格
+========================= */
+
+.search-card,
+.admin-panel,
+.card,
+.modal-content {
+  background: #ffffff;
   border-radius: 18px;
-  box-shadow: 0 8px 22px rgba(15, 23, 42, .08);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
 }
-.search-card { padding: 16px; margin-top: -12px; }
-input, select {
+
+/* =========================
+   搜索区域
+========================= */
+
+.search-card {
+  padding: 16px;
+  margin-top: -12px;
+}
+
+input,
+select {
   width: 100%;
   padding: 13px 14px;
   border: 1px solid #d1d5db;
@@ -40,71 +107,233 @@ input, select {
   font-size: 16px;
   margin: 8px 0;
 }
-.tabs { display: flex; gap: 8px; margin-top: 10px; }
-.tab { flex: 1; background: #e5e7eb; color: #111827; }
-.tab.active { background: #111827; color: white; }
-.ranking-list { margin-top: 16px; display: grid; gap: 12px; }
+
+/* =========================
+   分类按钮
+========================= */
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tab {
+  flex: 1;
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.tab.active {
+  background: #111827;
+  color: white;
+}
+
+/* =========================
+   排行榜
+========================= */
+
+.ranking-list {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
 .card {
-  padding: 16px;
+  padding: 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: 0.2s;
+  cursor: pointer;
 }
-.person-name { font-size: 20px; font-weight: 800; }
-.major { display: inline-block; margin-top: 8px; background: #eef2ff; color: #3730a3; padding: 4px 9px; border-radius: 999px; font-size: 13px; }
-.score { font-size: 30px; font-weight: 900; color: #f97316; text-align: right; }
-.count { font-size: 13px; color: #6b7280; text-align: right; }
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.person-name {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.major {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 10px;
+
+  background: #eef2ff;
+  color: #3730a3;
+
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.score {
+  font-size: 34px;
+  font-weight: 900;
+  color: #f97316;
+  text-align: right;
+}
+
+.count {
+  font-size: 13px;
+  color: #6b7280;
+  text-align: right;
+}
+
+/* =========================
+   弹窗
+========================= */
+
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.55);
+
+  background: rgba(0, 0, 0, 0.55);
+
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+
   padding: 16px;
+  z-index: 999;
 }
-.modal-content { width: 100%; max-width: 430px; padding: 22px; position: relative; }
+
+.modal-content {
+  width: 100%;
+  max-width: 430px;
+  padding: 24px;
+  position: relative;
+}
+
 .close {
   position: absolute;
-  right: 14px;
   top: 12px;
+  right: 14px;
+
   background: #e5e7eb;
   color: #111827;
+
   font-size: 20px;
   padding: 6px 12px;
 }
-.score-big { font-size: 44px; color: #f97316; font-weight: 900; margin: 10px 0; }
-#scoreRange { width: 100%; margin: 18px 0; }
-.admin-panel { padding: 16px; margin-top: 18px; }
-.hidden { display: none !important; }
-.danger { background: #dc2626; }
-#ratingMsg, #adminStatus { color: #059669; font-weight: 700; }
-@media (max-width: 600px) {
-  .topbar { align-items: flex-start; gap: 12px; }
-  .topbar h1 { font-size: 23px; }
-  .card { align-items: flex-start; }
-  .score { font-size: 25px; }
+
+.score-big {
+  font-size: 50px;
+  font-weight: 900;
+  color: #f97316;
+  margin: 10px 0;
 }
+
+#scoreRange {
+  width: 100%;
+  margin: 18px 0;
+}
+
+/* =========================
+   管理后台
+========================= */
+
+.admin-panel {
+  margin-top: 24px;
+  padding: 20px;
+}
+
+.admin-panel h2 {
+  margin-top: 0;
+}
+
+#adminStatus {
+  color: #059669;
+  font-weight: 700;
+}
+
+.danger {
+  background: #dc2626;
+}
+
+/* =========================
+   提示信息
+========================= */
+
+#ratingMsg {
+  margin-top: 12px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* =========================
+   Footer
+========================= */
+
 .footer-note {
   width: 100%;
+  margin-top: auto;
+  padding: 32px 16px 20px;
+
   display: flex;
   justify-content: center;
-  align-items: center;
-  margin: 40px 0 20px 0;
-  padding: 0 16px;
-  box-sizing: border-box;
 }
 
 .footer-inner {
   width: 100%;
   max-width: 760px;
+
   text-align: center;
+  line-height: 1.8;
   font-size: 13px;
+
   color: #6b7280;
+
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
+
   padding: 14px 18px;
-  line-height: 1.8;
-  box-sizing: border-box;
+}
+
+/* =========================
+   手机端
+========================= */
+
+@media (max-width: 600px) {
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .topbar h1 {
+    font-size: 22px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .person-name {
+    font-size: 20px;
+  }
+
+  .score {
+    font-size: 28px;
+  }
+
+  .modal-content {
+    padding: 20px;
+  }
+
+  .score-big {
+    font-size: 42px;
+  }
+
+  .footer-inner {
+    font-size: 12px;
+  }
 }

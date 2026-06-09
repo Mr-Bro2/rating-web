@@ -261,3 +261,54 @@ function escapeHtml(str) {
 }
 
 init();
+function renderDeleteOptions() {
+  const select = document.getElementById('deletePersonSelect');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">选择要删除的人物</option>';
+
+  persons.forEach(person => {
+    const option = document.createElement('option');
+    option.value = person.id;
+    option.textContent = `${person.name}（${person.major || '未分类'}）`;
+    select.appendChild(option);
+  });
+}
+
+async function deletePerson() {
+  const id = document.getElementById('deletePersonSelect').value;
+
+  if (!id) {
+    alert('请先选择要删除的人物');
+    return;
+  }
+
+  const person = persons.find(p => p.id === id);
+
+  if (!confirm(`确定要删除「${person?.name || '该人物'}」吗？删除后相关评分也会一起删除。`)) {
+    return;
+  }
+
+  const { error: ratingError } = await client
+    .from('ratings')
+    .delete()
+    .eq('person_id', id);
+
+  if (ratingError) {
+    alert('删除评分记录失败：' + ratingError.message);
+    return;
+  }
+
+  const { error: personError } = await client
+    .from('persons')
+    .delete()
+    .eq('id', id);
+
+  if (personError) {
+    alert('删除人物失败：' + personError.message);
+    return;
+  }
+
+  alert('删除成功');
+  await loadPersons();
+}

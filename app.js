@@ -262,8 +262,6 @@ function escapeHtml(str) {
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
 }
-
-init();
 function renderDeleteOptions() {
   const select = document.getElementById('deletePersonSelect');
   if (!select) return;
@@ -363,3 +361,5 @@ async function editPerson() {
   alert('修改成功');
   await loadPersons();
 }
+
+init();

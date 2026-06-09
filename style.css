@@ -85,3 +85,12 @@ input, select {
   .card { align-items: flex-start; }
   .score { font-size: 25px; }
 }
+.footer-note {
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+  padding: 30px 20px;
+  margin-top: 40px;
+  border-top: 1px solid #eee;
+  background: #fafafa;
+}

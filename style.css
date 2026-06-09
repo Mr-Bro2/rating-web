@@ -86,11 +86,14 @@ input, select {
   .score { font-size: 25px; }
 }
 .footer-note {
+  max-width: 900px;
+  margin: 40px auto 20px;
+  padding: 15px 20px;
   text-align: center;
-  color: #666;
-  font-size: 14px;
-  padding: 30px 20px;
-  margin-top: 40px;
-  border-top: 1px solid #eee;
-  background: #fafafa;
+  font-size: 13px;
+  color: #6b7280;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  line-height: 1.7;
 }

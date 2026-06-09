@@ -86,14 +86,25 @@ input, select {
   .score { font-size: 25px; }
 }
 .footer-note {
-  max-width: 900px;
-  margin: 40px auto 20px;
-  padding: 15px 20px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 40px 0 20px 0;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.footer-inner {
+  width: 100%;
+  max-width: 760px;
   text-align: center;
   font-size: 13px;
   color: #6b7280;
   background: #f9fafb;
-  border-radius: 12px;
   border: 1px solid #e5e7eb;
-  line-height: 1.7;
+  border-radius: 14px;
+  padding: 14px 18px;
+  line-height: 1.8;
+  box-sizing: border-box;
 }

@@ -57,9 +57,9 @@ async function loadPersons() {
   }
 
   persons = data || [];
-  renderPersons();
-  renderDeleteOptions();
-  renderEditOptions();
+renderPersons();
+renderDeleteOptions();
+renderEditOptions();
 }
 
 function renderPersons() {

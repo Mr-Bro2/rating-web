@@ -191,6 +191,7 @@ function bindEvents() {
 
   document.getElementById('loginBtn').addEventListener('click', adminLogin);
   document.getElementById('addPersonBtn').addEventListener('click', addPerson);
+  document.getElementById('deletePersonBtn').addEventListener('click', deletePerson);
   document.getElementById('logoutBtn').addEventListener('click', adminLogout);
 }
 
